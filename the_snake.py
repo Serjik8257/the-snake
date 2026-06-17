@@ -38,6 +38,9 @@ pygame.display.set_caption('Змейка')
 # Настройка времени:
 clock = pygame.time.Clock()
 
+# Стартовая позиция яблока:
+START_POSITION = (0, 0)
+
 
 class GameObject:
     """Инициализирует позицию и цвет объекта."""
@@ -52,22 +55,27 @@ class GameObject:
 
     def draw(self):
         """Отрисовывает объект."""
-        pass
+        raise NotImplementedError(
+            'Метод draw() должен быть переопределён в дочернем классе.'
+        )
 
 
 class Apple(GameObject):
     """Инициализирует яблоко."""
 
     def __init__(self):
-        super().__init__((0, 0), body_color=APPLE_COLOR)
-        self.randomize_position()
+        super().__init__(START_POSITION, body_color=APPLE_COLOR)
 
-    def randomize_position(self):
+    def randomize_position(self, occupied_positions):
         """Устанавливает случайную позицию яблока."""
-        self.position = (
-            randint(0, GRID_WIDTH - 1) * GRID_SIZE,
-            randint(0, GRID_HEIGHT - 1) * GRID_SIZE
-        )
+        while True:
+            current_position = (
+                randint(0, GRID_WIDTH - 1) * GRID_SIZE,
+                randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+            )
+            if current_position not in occupied_positions:
+                self.position = current_position
+                break
 
     def draw(self):
         """Отрисовывает яблоко."""
@@ -89,7 +97,6 @@ class Snake(GameObject):
         self.positions = [self.position]
         self.direction = RIGHT
         self.next_direction = None
-        self.last = None
 
     def get_head_position(self):
         """Возвращает позицию головы змейки."""
@@ -106,9 +113,7 @@ class Snake(GameObject):
         self.positions.insert(0, new_head)
 
         if len(self.positions) > self.length:
-            self.last = self.positions.pop()
-        if self.positions[0] in self.positions[1:]:
-            self.reset()
+            self.positions.pop()
 
     def update_direction(self):
         """Обновляет направление движения змейки."""
@@ -117,27 +122,22 @@ class Snake(GameObject):
             self.next_direction = None
 
     def draw(self):
-        """Отрисовывает змейку"""
-        for position in self.positions[:-1]:
-            rect = (pygame.Rect(position, (GRID_SIZE, GRID_SIZE)))
+        """Отрисовывает змейку."""
+        for position in self.positions:
+            rect = pygame.Rect(position, (GRID_SIZE, GRID_SIZE))
             pygame.draw.rect(screen, self.body_color, rect)
             pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
-        head_rect = pygame.Rect(self.positions[0], (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, self.body_color, head_rect)
-        pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
-
-        if self.last:
-            last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
-
     def reset(self):
         """Выполняет сброс после столкновения."""
-        self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
+        self.position = (
+            SCREEN_WIDTH // 2,
+            SCREEN_HEIGHT // 2
+        )
+        self.positions = [self.position]
         self.length = 1
         self.direction = choice([UP, DOWN, LEFT, RIGHT])
         self.next_direction = None
-        self.last = None
 
 
 def handle_keys(game_object):
@@ -160,22 +160,22 @@ def handle_keys(game_object):
 def main():
     """Основная функция игры."""
     pygame.init()
-
     snake = Snake()
     apple = Apple()
+    apple.randomize_position(snake.positions)
 
     while True:
         clock.tick(SPEED)
-
         handle_keys(snake)
-
         snake.update_direction()
         snake.move()
 
+        if snake.get_head_position() in snake.positions[1:]:
+            snake.reset()
+
         if snake.get_head_position() == apple.position:
             snake.length += 1
-            apple.randomize_position()
-            snake.positions.append(snake.last)
+            apple.randomize_position(snake.positions)
 
         screen.fill(BOARD_BACKGROUND_COLOR)
 
