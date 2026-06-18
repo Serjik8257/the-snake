@@ -68,14 +68,17 @@ class Apple(GameObject):
 
     def randomize_position(self, occupied_positions):
         """Устанавливает случайную позицию яблока."""
-        while True:
+        current_position = (
+            randint(0, GRID_WIDTH - 1) * GRID_SIZE,
+            randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+        )
+        while current_position in occupied_positions:
             current_position = (
                 randint(0, GRID_WIDTH - 1) * GRID_SIZE,
                 randint(0, GRID_HEIGHT - 1) * GRID_SIZE
             )
-            if current_position not in occupied_positions:
-                self.position = current_position
-                break
+
+        self.position = current_position
 
     def draw(self):
         """Отрисовывает яблоко."""
@@ -173,7 +176,7 @@ def main():
         if snake.get_head_position() in snake.positions[1:]:
             snake.reset()
 
-        if snake.get_head_position() == apple.position:
+        elif snake.get_head_position() == apple.position:
             snake.length += 1
             apple.randomize_position(snake.positions)
 
