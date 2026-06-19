@@ -66,19 +66,21 @@ class Apple(GameObject):
     def __init__(self):
         super().__init__(START_POSITION, body_color=APPLE_COLOR)
 
-    def randomize_position(self, occupied_positions):
-        """Устанавливает случайную позицию яблока."""
-        current_position = (
+    def get_random_position(self):
+        """Возвращает случайную позицию на игровом поле."""
+        return (
             randint(0, GRID_WIDTH - 1) * GRID_SIZE,
             randint(0, GRID_HEIGHT - 1) * GRID_SIZE
         )
-        while current_position in occupied_positions:
-            current_position = (
-                randint(0, GRID_WIDTH - 1) * GRID_SIZE,
-                randint(0, GRID_HEIGHT - 1) * GRID_SIZE
-            )
 
-        self.position = current_position
+    def randomize_position(self, occupied_positions):
+        """Устанавливает случайную позицию яблока."""
+        self.position = self.get_random_position()
+
+        while self.position in occupied_positions:
+            self.position = self.get_random_position()
+
+        self.position = self.position
 
     def draw(self):
         """Отрисовывает яблоко."""
